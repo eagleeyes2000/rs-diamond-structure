@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>天賦盤 互動編輯版</title>
+<style>
+  :root{
+    --deep: #2E8B57;
+    --mid: #5A9E74;
+    --pale: #A9CBA4;
+    --ink: #1f2b24;
+    --paper: #F7FAF6;
+    --line: #cfe0d2;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    font-family: "PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 24px 16px 60px;
+  }
+  h1{
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    letter-spacing: 0.02em;
+  }
+  .sub{
+    font-size: 13px;
+    color: #567a63;
+    margin-bottom: 18px;
+  }
+  .panel{
+    background:#fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 20px;
+    max-width: 560px;
+    width: 100%;
+  }
+  .panel h2{
+    font-size: 13px;
+    margin: 0 0 8px;
+    color: var(--deep);
+    font-weight: 700;
+  }
+  .panel ul{
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #384a3d;
+  }
+  .toolbar{
+    display:flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content:center;
+    align-items:center;
+    margin-bottom: 20px;
+  }
+  button{
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid var(--deep);
+    background: var(--deep);
+    color: #fff;
+    padding: 9px 16px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: opacity .15s ease;
+  }
+  button:hover{ opacity: 0.85; }
+  button.secondary{
+    background: #fff;
+    color: var(--deep);
+  }
+  #stage{
+    position: relative;
+    width: 540px;
+    max-width: 92vw;
+    aspect-ratio: 1 / 1;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  #stage svg{
+    width: 100%;
+    height: 100%;
+    display:block;
+  }
+  .layer2-text{
+    font-size: 14px;
+    fill: black;
+    text-anchor: middle;
+    dominant-baseline: middle;
+  }
+  .center-text{
+    font-size: 13px;
+    fill: black;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .watermark-text{
+    font-size: 16px;
+    fill: black;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .editable-text:hover{
+    fill: #b3401e;
+  }
+  .pentagon-edge{
+    stroke: rgba(20,20,20,0.28);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 5,5;
+    cursor: pointer;
+    pointer-events: stroke;
+  }
+  .pentagon-edge.active{
+    stroke: #000;
+    stroke-width: 2.5;
+    stroke-dasharray: none;
+  }
+  .tick-edge{
+    stroke: rgba(20,20,20,0.28);
+    stroke-width: 2.5;
+    fill: none;
+    stroke-linecap: round;
+    stroke-dasharray: 3,3;
+    cursor: pointer;
+    pointer-events: stroke;
+  }
+  .tick-edge.active-black{
+    stroke: #000;
+    stroke-width: 3;
+    stroke-dasharray: none;
+  }
+  .tick-edge.active-red{
+    stroke: #e0221a;
+    stroke-width: 3;
+    stroke-dasharray: none;
+  }
+  .boundary-dot{
+    fill: #fff;
+    stroke: rgba(20,20,20,0.55);
+    stroke-width: 1.5;
+    stroke-dasharray: 2,2;
+    cursor: pointer;
+  }
+  .boundary-dot.active{
+    fill: #000;
+    stroke: #000;
+    stroke-dasharray: none;
+  }
+  .hit-dot{
+    fill: transparent;
+    cursor: pointer;
+  }
+  .boundary-cw{
+    stroke: rgba(20,20,20,0.3);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 4,4;
+    color: rgba(20,20,20,0.3);
+    cursor: pointer;
+    pointer-events: stroke;
+  }
+  .boundary-cw.active{
+    stroke: #e0221a;
+    color: #e0221a;
+    stroke-width: 2.5;
+    stroke-dasharray: none;
+  }
+  .boundary-ccw{
+    stroke: rgba(20,20,20,0.3);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 4,4;
+    color: rgba(20,20,20,0.3);
+    cursor: pointer;
+    pointer-events: stroke;
+  }
+  .boundary-ccw.active{
+    stroke: #000;
+    color: #000;
+    stroke-width: 2.5;
+    stroke-dasharray: none;
+  }
+  .star-edge{
+    stroke: rgba(160,20,20,0.28);
+    stroke-width: 2;
+    fill: none;
+    stroke-dasharray: 5,5;
+    cursor: pointer;
+    pointer-events: stroke;
+  }
+  .star-edge.active-red{
+    stroke: #e0221a;
+    stroke-width: 2.5;
+    stroke-dasharray: none;
+  }
+  .star-edge.active-black{
+    stroke: #000;
+    stroke-width: 2.5;
+    stroke-dasharray: none;
+  }
+  .hit{
+    stroke: transparent;
+    stroke-width: 14;
+    fill: none;
+    cursor: pointer;
+  }
+  .edit-input{
+    position: absolute;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 3px 6px;
+    border: 2px solid #b3401e;
+    border-radius: 4px;
+    z-index: 50;
+    text-align: center;
+    background: #fff;
+  }
+  footer{
+    margin-top: 22px;
+    font-size: 11.5px;
+    color: #7c9184;
+    text-align:center;
+    max-width: 480px;
+  }
+</style>
+</head>
+<body>
+
+  <h1>天賦盤 · 互動編輯版</h1>
+  <div class="sub">點擊線條切換顏色／點擊文字直接修改</div>
+
+  <div class="toolbar">
+    <label for="fileNameInput" style="font-size:13px;color:#384a3d;align-self:center;">檔名：</label>
+    <input id="fileNameInput" type="text" value="天賦盤" style="font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;width:140px;">
+    <button id="btnSVG">另存為 SVG</button>
+    <button id="btnPNG">另存為 PNG</button>
+    <button id="btnReset" class="secondary">重置線條顏色</button>
+  </div>
+  <div id="statusMsg" style="min-height:18px;font-size:12.5px;color:#567a63;margin-top:-10px;margin-bottom:14px;"></div>
+
+  <div id="stage">
+    <svg id="mainsvg" width="540" height="540" viewBox="0 0 540 540" xmlns="http://www.w3.org/2000/svg">
+
+      <defs>
+        <marker id="arrowMarker" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 Z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="white"/>
+
+      <g transform="translate(270, 270) rotate(-90)">
+
+        <!-- 層 1 (R 0-50) -->
+        <g fill="#A9CBA4">
+          <path d="M 0,0 L 50,0 A 50,50 0 0 1 15.45,47.55 Z"/>
+          <path d="M 0,0 L 15.45,47.55 A 50,50 0 0 1 -40.45,29.39 Z"/>
+          <path d="M 0,0 L -40.45,29.39 A 50,50 0 0 1 -40.45,-29.39 Z"/>
+          <path d="M 0,0 L -40.45,-29.39 A 50,50 0 0 1 15.45,-47.55 Z"/>
+          <path d="M 0,0 L 15.45,-47.55 A 50,50 0 0 1 50,0 Z"/>
+        </g>
+
+        <!-- 層 2 (R 50-90) -->
+        <g fill="#2E8B57">
+          <path d="M 50,0 A 50,50 0 0 1 15.45,47.55 L 27.81,85.59 A 90,90 0 0 0 90,0 Z"/>
+          <path d="M 15.45,47.55 A 50,50 0 0 1 -40.45,29.39 L -72.81,52.90 A 90,90 0 0 0 27.81,85.59 Z"/>
+          <path d="M -40.45,29.39 A 50,50 0 0 1 -40.45,-29.39 L -72.81,-52.90 A 90,90 0 0 0 -72.81,52.90 Z"/>
+          <path d="M -40.45,-29.39 A 50,50 0 0 1 15.45,-47.55 L 27.81,-85.59 A 90,90 0 0 0 -72.81,-52.90 Z"/>
+          <path d="M 15.45,-47.55 A 50,50 0 0 1 50,0 L 90,0 A 90,90 0 0 0 27.81,-85.59 Z"/>
+        </g>
+
+        <!-- 層 3 (R 90-165) -->
+        <g>
+          <path fill="#75B388" d="M 90,0 A 90,90 0 0 1 27.81,85.59 L 50.99,156.92 A 165,165 0 0 0 165,0 Z"/>
+          <path fill="#5A9E74" d="M 27.81,85.59 A 90,90 0 0 1 -72.81,52.90 L -133.49,96.98 A 165,165 0 0 0 50.99,156.92 Z"/>
+          <path fill="#2E8B57" d="M -72.81,52.90 A 90,90 0 0 1 -72.81,-52.90 L -133.49,-96.98 A 165,165 0 0 0 -133.49,96.98 Z"/>
+          <path fill="#A9CBA4" d="M -72.81,-52.90 A 90,90 0 0 1 27.81,-85.59 L 50.99,-156.92 A 165,165 0 0 0 -133.49,-96.98 Z"/>
+          <path fill="#8FBF96" d="M 27.81,-85.59 A 90,90 0 0 1 90,0 L 165,0 A 165,165 0 0 0 50.99,-156.92 Z"/>
+        </g>
+
+        <!-- 層 4 (R 165-250) -->
+        <g>
+           <path fill="#8FBF96" d="M 165,0 A 165,165 0 0 1 50.99,156.92 L 77.25,237.77 A 250,250 0 0 0 250,0 Z"/>
+           <path fill="#A9CBA4" d="M 50.99,156.92 A 165,165 0 0 1 -133.49,96.98 L -202.26,146.96 A 250,250 0 0 0 77.25,237.77 Z"/>
+           <path fill="#2E8B57" d="M -133.49,96.98 A 165,165 0 0 1 -133.49,-96.98 L -202.26,-146.96 A 250,250 0 0 0 -202.26,146.96 Z"/>
+           <path fill="#5A9E74" d="M -133.49,-96.98 A 165,165 0 0 1 50.99,-156.92 L 77.25,-237.77 A 250,250 0 0 0 -202.26,-146.96 Z"/>
+           <path fill="#75B388" d="M 50.99,-156.92 A 165,165 0 0 1 165,0 L 250,0 A 250,250 0 0 0 77.25,-237.77 Z"/>
+        </g>
+
+        <!-- 五角形 5 邊 (可各自點擊) -->
+        <g id="pentagonGroup">
+          <line class="hit" data-pair="p0" x1="169.88" y1="123.44" x2="-64.90" y2="199.72"/>
+          <line class="pentagon-edge" data-pair="p0" x1="169.88" y1="123.44" x2="-64.90" y2="199.72"/>
+
+          <line class="hit" data-pair="p1" x1="-64.90" y1="199.72" x2="-210" y2="0"/>
+          <line class="pentagon-edge" data-pair="p1" x1="-64.90" y1="199.72" x2="-210" y2="0"/>
+
+          <line class="hit" data-pair="p2" x1="-210" y1="0" x2="-64.90" y2="-199.72"/>
+          <line class="pentagon-edge" data-pair="p2" x1="-210" y1="0" x2="-64.90" y2="-199.72"/>
+
+          <line class="hit" data-pair="p3" x1="-64.90" y1="-199.72" x2="169.88" y2="-123.44"/>
+          <line class="pentagon-edge" data-pair="p3" x1="-64.90" y1="-199.72" x2="169.88" y2="-123.44"/>
+
+          <line class="hit" data-pair="p4" x1="169.88" y1="-123.44" x2="169.88" y2="123.44"/>
+          <line class="pentagon-edge" data-pair="p4" x1="169.88" y1="-123.44" x2="169.88" y2="123.44"/>
+        </g>
+
+        <!-- 外圈與次外圈中心連線 (每個角度上，連接內在藍圖環中心點到外在現況環中心點，比五角形/五芒星短，可各自點擊) -->
+        <g id="radialSpokeGroup">
+          <line class="hit" data-pair="r0" x1="103.15" y1="74.94" x2="169.88" y2="123.44"/>
+          <line class="tick-edge" data-pair="r0" x1="103.15" y1="74.94" x2="169.88" y2="123.44"/>
+
+          <line class="hit" data-pair="r1" x1="-39.41" y1="121.27" x2="-64.90" y2="199.72"/>
+          <line class="tick-edge" data-pair="r1" x1="-39.41" y1="121.27" x2="-64.90" y2="199.72"/>
+
+          <line class="hit" data-pair="r2" x1="-127.5" y1="0" x2="-210" y2="0"/>
+          <line class="tick-edge" data-pair="r2" x1="-127.5" y1="0" x2="-210" y2="0"/>
+
+          <line class="hit" data-pair="r3" x1="-39.41" y1="-121.27" x2="-64.90" y2="-199.72"/>
+          <line class="tick-edge" data-pair="r3" x1="-39.41" y1="-121.27" x2="-64.90" y2="-199.72"/>
+
+          <line class="hit" data-pair="r4" x1="103.15" y1="-74.94" x2="169.88" y2="-123.44"/>
+          <line class="tick-edge" data-pair="r4" x1="103.15" y1="-74.94" x2="169.88" y2="-123.44"/>
+        </g>
+
+        <!-- 各格外緣中心點：黑點切換 + 右側順時鐘(紅)/左側逆時鐘(黑) 箭頭，皆在同一外緣圓上 -->
+        <g id="boundaryGroup">
+          <!-- 第 0 格外緣中心 -->
+          <circle class="hit-dot" data-pair="d0" cx="202.25" cy="146.95" r="13"/>
+          <circle class="boundary-dot" data-pair="d0" cx="202.25" cy="146.95" r="7"/>
+
+          <path class="hit" data-pair="cw0" d="M 191.51,160.7 A 250,250 0 0 1 101.68,228.39"/>
+          <path class="boundary-cw" data-pair="cw0" d="M 191.51,160.7 A 250,250 0 0 1 101.68,228.39" marker-end="url(#arrowMarker)"/>
+
+          <path class="hit" data-pair="ccw0" d="M 212.01,132.48 A 250,250 0 0 0 248.63,26.13"/>
+          <path class="boundary-ccw" data-pair="ccw0" d="M 212.01,132.48 A 250,250 0 0 0 248.63,26.13" marker-end="url(#arrowMarker)"/>
+
+          <!-- 第 1 格外緣中心 -->
+          <circle class="hit-dot" data-pair="d1" cx="-77.25" cy="237.76" r="13"/>
+          <circle class="boundary-dot" data-pair="d1" cx="-77.25" cy="237.76" r="7"/>
+
+          <path class="hit" data-pair="cw1" d="M -93.65,231.8 A 250,250 0 0 1 -185.79,167.28"/>
+          <path class="boundary-cw" data-pair="cw1" d="M -93.65,231.8 A 250,250 0 0 1 -185.79,167.28" marker-end="url(#arrowMarker)"/>
+
+          <path class="hit" data-pair="ccw1" d="M -60.48,242.57 A 250,250 0 0 0 51.98,244.54"/>
+          <path class="boundary-ccw" data-pair="ccw1" d="M -60.48,242.57 A 250,250 0 0 0 51.98,244.54" marker-end="url(#arrowMarker)"/>
+
+          <!-- 第 2 格外緣中心 -->
+          <circle class="hit-dot" data-pair="d2" cx="-250.0" cy="0.0" r="13"/>
+          <circle class="boundary-dot" data-pair="d2" cx="-250.0" cy="0.0" r="7"/>
+
+          <path class="hit" data-pair="cw2" d="M -249.39,-17.44 A 250,250 0 0 1 -216.51,-125.0"/>
+          <path class="boundary-cw" data-pair="cw2" d="M -249.39,-17.44 A 250,250 0 0 1 -216.51,-125.0" marker-end="url(#arrowMarker)"/>
+
+          <path class="hit" data-pair="ccw2" d="M -249.39,17.44 A 250,250 0 0 0 -216.51,125.0"/>
+          <path class="boundary-ccw" data-pair="ccw2" d="M -249.39,17.44 A 250,250 0 0 0 -216.51,125.0" marker-end="url(#arrowMarker)"/>
+
+          <!-- 第 3 格外緣中心 -->
+          <circle class="hit-dot" data-pair="d3" cx="-77.25" cy="-237.76" r="13"/>
+          <circle class="boundary-dot" data-pair="d3" cx="-77.25" cy="-237.76" r="7"/>
+
+          <path class="hit" data-pair="cw3" d="M -60.48,-242.57 A 250,250 0 0 1 51.98,-244.54"/>
+          <path class="boundary-cw" data-pair="cw3" d="M -60.48,-242.57 A 250,250 0 0 1 51.98,-244.54" marker-end="url(#arrowMarker)"/>
+
+          <path class="hit" data-pair="ccw3" d="M -93.65,-231.8 A 250,250 0 0 0 -185.79,-167.28"/>
+          <path class="boundary-ccw" data-pair="ccw3" d="M -93.65,-231.8 A 250,250 0 0 0 -185.79,-167.28" marker-end="url(#arrowMarker)"/>
+
+          <!-- 第 4 格外緣中心 -->
+          <circle class="hit-dot" data-pair="d4" cx="202.25" cy="-146.95" r="13"/>
+          <circle class="boundary-dot" data-pair="d4" cx="202.25" cy="-146.95" r="7"/>
+
+          <path class="hit" data-pair="cw4" d="M 212.01,-132.48 A 250,250 0 0 1 248.63,-26.13"/>
+          <path class="boundary-cw" data-pair="cw4" d="M 212.01,-132.48 A 250,250 0 0 1 248.63,-26.13" marker-end="url(#arrowMarker)"/>
+
+          <path class="hit" data-pair="ccw4" d="M 191.51,-160.7 A 250,250 0 0 0 101.68,-228.39"/>
+          <path class="boundary-ccw" data-pair="ccw4" d="M 191.51,-160.7 A 250,250 0 0 0 101.68,-228.39" marker-end="url(#arrowMarker)"/>
+
+        </g>
+        <!-- 五芒星 5 邊 (可各自點擊) -->
+        <g id="starGroup">
+          <line class="hit" data-pair="s0" x1="169.88" y1="123.44" x2="-210" y2="0"/>
+          <line class="star-edge" data-pair="s0" x1="169.88" y1="123.44" x2="-210" y2="0"/>
+
+          <line class="hit" data-pair="s1" x1="-210" y1="0" x2="169.88" y2="-123.44"/>
+          <line class="star-edge" data-pair="s1" x1="-210" y1="0" x2="169.88" y2="-123.44"/>
+
+          <line class="hit" data-pair="s2" x1="169.88" y1="-123.44" x2="-64.90" y2="199.72"/>
+          <line class="star-edge" data-pair="s2" x1="169.88" y1="-123.44" x2="-64.90" y2="199.72"/>
+
+          <line class="hit" data-pair="s3" x1="-64.90" y1="199.72" x2="-64.90" y2="-199.72"/>
+          <line class="star-edge" data-pair="s3" x1="-64.90" y1="199.72" x2="-64.90" y2="-199.72"/>
+
+          <line class="hit" data-pair="s4" x1="-64.90" y1="-199.72" x2="169.88" y2="123.44"/>
+          <line class="star-edge" data-pair="s4" x1="-64.90" y1="-199.72" x2="169.88" y2="123.44"/>
+        </g>
+
+        <!-- 中心圓 (可編輯文字) -->
+        <g id="centerGroup">
+          <circle cx="0" cy="0" r="32" fill="#F7FAF6" stroke="#cfe0d2" stroke-width="1.5"/>
+          <text class="center-text editable-text" x="0" y="0" transform="rotate(90)">人、事、物</text>
+        </g>
+
+        <!-- 20% 文字 (第2層) -->
+        <g>
+          <text class="layer2-text" x="56.63" y="41.15" transform="rotate(126, 56.63, 41.15)">20%</text>
+          <text class="layer2-text" x="-21.63" y="66.57" transform="rotate(198, -21.63, 66.57)">20%</text>
+          <text class="layer2-text" x="-70" y="0" transform="rotate(270, -70, 0)">20%</text>
+          <text class="layer2-text" x="-21.63" y="-66.57" transform="rotate(342, -21.63, -66.57)">20%</text>
+          <text class="layer2-text" x="56.63" y="-41.15" transform="rotate(54, 56.63, -41.15)">20%</text>
+        </g>
+
+        <!-- 內在藍圖 文字 (第3層／人格特質名可放這裡) -->
+        <g>
+           <text class="watermark-text editable-text" x="103.15" y="74.94" transform="rotate(126, 103.15, 74.94)">內在藍圖</text>
+           <text class="watermark-text editable-text" x="-39.41" y="121.27" transform="rotate(198, -39.41, 121.27)">內在藍圖</text>
+           <text class="watermark-text editable-text" x="-127.5" y="0" transform="rotate(270, -127.5, 0)">內在藍圖</text>
+           <text class="watermark-text editable-text" x="-39.41" y="-121.27" transform="rotate(342, -39.41, -121.27)">內在藍圖</text>
+           <text class="watermark-text editable-text" x="103.15" y="-74.94" transform="rotate(54, 103.15, -74.94)">內在藍圖</text>
+        </g>
+
+        <!-- 外在現況/情緒 文字 (第4層／人格特質名／情緒名 用「／」分隔) -->
+        <g>
+          <text class="watermark-text editable-text" x="169.88" y="123.44" transform="rotate(126, 169.88, 123.44)">外在現況/情緒</text>
+          <text class="watermark-text editable-text" x="-64.90" y="199.72" transform="rotate(198, -64.90, 199.72)">外在現況/情緒</text>
+          <text class="watermark-text editable-text" x="-210" y="0" transform="rotate(270, -210, 0)">外在現況/情緒</text>
+          <text class="watermark-text editable-text" x="-64.90" y="-199.72" transform="rotate(342, -64.90, -199.72)">外在現況/情緒</text>
+          <text class="watermark-text editable-text" x="169.88" y="-123.44" transform="rotate(54, 169.88, -123.44)">外在現況/情緒</text>
+        </g>
+
+      </g>
+    </svg>
+  </div>
+
+  <div class="panel">
+    <h2>使用說明</h2>
+    <ul>
+      <li>五角形任一邊：點一下變黑色實線，再點一下恢復暗色虛線</li>
+      <li>最外圈與次外圈中心連線（5條，比五角形/五芒星短）：點一下變紅、再點變黑、再點恢復暗虛線（三段循環）</li>
+      <li>各格外緣中心點：空心虛線圈，點一下變實心黑點，再點一下恢復空心虛線圈（兩色切換）</li>
+      <li>中心點右側（順時鐘）箭頭：點一下變紅色實線，再點一下恢復暗虛線（兩色切換）</li>
+      <li>中心點左側（逆時鐘）箭頭：點一下變黑色實線，再點一下恢復暗虛線（兩色切換）</li>
+      <li>五芒星任一邊：點一下變紅色實線，再點一下變黑色實線，再點一下恢復暗色虛線（三段循環）</li>
+      <li>外圈的名稱文字：點一下即可直接輸入新內容（例如「蘇馬利／悲傷」），按 Enter 或點外面即儲存（中間的「20%」文字為固定顯示，不可點擊，避免誤按）</li>
+      <li>編輯完成後，可先在「檔名」欄位輸入想要的名稱，再用下方按鈕另存為 SVG（可再編輯的向量檔）或 PNG（圖片檔）</li>
+    </ul>
+  </div>
+
+  <footer>
+    這是一個獨立可離線使用的檔案，所有編輯只存在瀏覽器記憶體中；請務必在關閉頁面前用上方按鈕另存 SVG 或 PNG。
+  </footer>
+
+<script>
+  const stage = document.getElementById('stage');
+  const svg = document.getElementById('mainsvg');
+
+  // ---- 線條切換：暗虛線 → 紅實線 → 黑實線 → 回到暗虛線 (三段循環，共用函式) ----
+  function cycleEdgeColor(line){
+    if(line.classList.contains('active-red')){
+      line.classList.remove('active-red');
+      line.classList.add('active-black');
+    } else if(line.classList.contains('active-black')){
+      line.classList.remove('active-black');
+    } else {
+      line.classList.add('active-red');
+    }
+  }
+
+  function wireEdgeGroup(groupId, edgeClass){
+    document.querySelectorAll(`#${groupId} .hit`).forEach(hit=>{
+      hit.addEventListener('click', ()=>{
+        const pair = hit.getAttribute('data-pair');
+        const line = svg.querySelector(`#${groupId} .${edgeClass}[data-pair="${pair}"]`);
+        cycleEdgeColor(line);
+      });
+    });
+  }
+
+  // 五角形：維持原本兩段循環（暗虛線／黑實線）
+  document.querySelectorAll('#pentagonGroup .hit').forEach(hit=>{
+    hit.addEventListener('click', ()=>{
+      const pair = hit.getAttribute('data-pair');
+      const line = svg.querySelector(`#pentagonGroup .pentagon-edge[data-pair="${pair}"]`);
+      line.classList.toggle('active');
+    });
+  });
+
+  // 外圈與次外圈中心連線、五芒星：三段循環（暗虛線／紅實線／黑實線）
+  wireEdgeGroup('radialSpokeGroup', 'tick-edge');
+  wireEdgeGroup('starGroup', 'star-edge');
+
+  // 外圈交界點：黑點 2 色切換（暗／黑）、順時鐘弧線 2 色切換（暗虛線／紅實線）、逆時鐘弧線 2 色切換（暗虛線／黑實線）
+  document.querySelectorAll('#boundaryGroup .hit-dot').forEach(hit=>{
+    hit.addEventListener('click', ()=>{
+      const pair = hit.getAttribute('data-pair');
+      const dot = svg.querySelector(`#boundaryGroup .boundary-dot[data-pair="${pair}"]`);
+      dot.classList.toggle('active');
+    });
+  });
+  document.querySelectorAll('#boundaryGroup .hit[data-pair^="cw"]').forEach(hit=>{
+    hit.addEventListener('click', ()=>{
+      const pair = hit.getAttribute('data-pair');
+      const arc = svg.querySelector(`#boundaryGroup .boundary-cw[data-pair="${pair}"]`);
+      arc.classList.toggle('active');
+    });
+  });
+  document.querySelectorAll('#boundaryGroup .hit[data-pair^="ccw"]').forEach(hit=>{
+    hit.addEventListener('click', ()=>{
+      const pair = hit.getAttribute('data-pair');
+      const arc = svg.querySelector(`#boundaryGroup .boundary-ccw[data-pair="${pair}"]`);
+      arc.classList.toggle('active');
+    });
+  });
+
+  document.getElementById('btnReset').addEventListener('click', ()=>{
+    svg.querySelectorAll('.active, .active-red, .active-black').forEach(l=>{
+      l.classList.remove('active','active-red','active-black');
+    });
+  });
+
+  // ---- 文字編輯 ----
+  let activeInput = null;
+
+  function closeInput(commit){
+    if(!activeInput) return;
+    const {input, textEl} = activeInput;
+    if(commit){
+      const val = input.value.trim();
+      if(val.length){ textEl.textContent = val; }
+    }
+    input.remove();
+    activeInput = null;
+  }
+
+  document.querySelectorAll('.editable-text').forEach(textEl=>{
+    textEl.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if(activeInput){ closeInput(true); }
+
+      const rect = textEl.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'edit-input';
+      input.value = textEl.textContent;
+
+      const width = Math.max(rect.width + 24, 70);
+      input.style.left = (rect.left - stageRect.left + rect.width/2 - width/2) + 'px';
+      input.style.top = (rect.top - stageRect.top - 4) + 'px';
+      input.style.width = width + 'px';
+
+      stage.appendChild(input);
+      activeInput = { input, textEl };
+      input.focus();
+      input.select();
+
+      input.addEventListener('keydown', (ev)=>{
+        if(ev.key === 'Enter'){ closeInput(true); }
+        if(ev.key === 'Escape'){ closeInput(false); }
+      });
+      input.addEventListener('blur', ()=> closeInput(true));
+    });
+  });
+
+  document.addEventListener('click', (e)=>{
+    if(activeInput && !e.target.closest('.edit-input')){
+      closeInput(true);
+    }
+  });
+
+  // ---- 匯出共用：把畫面上實際用到的樣式，直接寫進複製出來的 SVG 內 ----
+  // (瀏覽器預覽時樣式來自外部 <style>，但單獨開啟 SVG 檔案時不會帶著頁面樣式，
+  //  所以必須把顏色/虛線/字體樣式直接內嵌進 SVG 本身，檔案才會跟畫面上看到的一致)
+  function buildExportClone(){
+    closeInput(true);
+    const clone = svg.cloneNode(true);
+    clone.querySelectorAll('.hit, .hit-dot').forEach(n=>n.remove());
+    clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+
+    const styleEl = document.createElementNS('http://www.w3.org/2000/svg','style');
+    styleEl.textContent = `
+      text{ font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; }
+      .layer2-text{ font-size:14px; fill:#000; text-anchor:middle; dominant-baseline:middle; }
+      .center-text{ font-size:13px; fill:#000; text-anchor:middle; dominant-baseline:middle; font-weight:bold; }
+      .watermark-text{ font-size:16px; fill:#000; text-anchor:middle; dominant-baseline:middle; font-weight:bold; }
+      .pentagon-edge{ stroke:rgba(20,20,20,0.28); stroke-width:2px; fill:none; stroke-dasharray:5,5; }
+      .pentagon-edge.active{ stroke:#000; stroke-width:2.5px; stroke-dasharray:none; }
+      .tick-edge{ stroke:rgba(20,20,20,0.28); stroke-width:2.5px; fill:none; stroke-linecap:round; stroke-dasharray:3,3; }
+      .tick-edge.active-black{ stroke:#000; stroke-width:3px; stroke-dasharray:none; }
+      .tick-edge.active-red{ stroke:#e0221a; stroke-width:3px; stroke-dasharray:none; }
+      .boundary-dot{ fill:#fff; stroke:rgba(20,20,20,0.55); stroke-width:1.5px; stroke-dasharray:2,2; }
+      .boundary-dot.active{ fill:#000; stroke:#000; stroke-dasharray:none; }
+      .boundary-cw{ stroke:rgba(20,20,20,0.3); stroke-width:2px; fill:none; stroke-dasharray:4,4; color:rgba(20,20,20,0.3); }
+      .boundary-cw.active{ stroke:#e0221a; color:#e0221a; stroke-width:2.5px; stroke-dasharray:none; }
+      .boundary-ccw{ stroke:rgba(20,20,20,0.3); stroke-width:2px; fill:none; stroke-dasharray:4,4; color:rgba(20,20,20,0.3); }
+      .boundary-ccw.active{ stroke:#000; color:#000; stroke-width:2.5px; stroke-dasharray:none; }
+      .star-edge{ stroke:rgba(160,20,20,0.28); stroke-width:2px; fill:none; stroke-dasharray:5,5; }
+      .star-edge.active-red{ stroke:#e0221a; stroke-width:2.5px; stroke-dasharray:none; }
+      .star-edge.active-black{ stroke:#000; stroke-width:2.5px; stroke-dasharray:none; }
+    `;
+    clone.insertBefore(styleEl, clone.firstChild);
+    return clone;
+  }
+
+  function showStatus(msg){
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    setTimeout(()=>{ if(el.textContent === msg) el.textContent = ''; }, 4000);
+  }
+
+  // 取得使用者自訂檔名（去除不合法字元，空白則用預設值「天賦盤」）
+  function getFileName(){
+    const raw = document.getElementById('fileNameInput').value.trim();
+    const safe = raw.replace(/[\\/:*?"<>|]/g, '').trim();
+    return safe.length ? safe : '天賦盤';
+  }
+
+  // ---- 匯出 SVG ----
+  document.getElementById('btnSVG').addEventListener('click', ()=>{
+    const clone = buildExportClone();
+    const serializer = new XMLSerializer();
+    let svgString = serializer.serializeToString(clone);
+    svgString = '<?xml version="1.0" encoding="UTF-8"?>\n' + svgString;
+    const blob = new Blob([svgString], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = getFileName() + '.svg';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    // 備援：額外開一個新分頁顯示同一份內容，若下載被瀏覽器擋掉，
+    // 可在新分頁按 Ctrl+S 或右鍵「另存新檔」手動存成 .svg
+    window.open(url, '_blank');
+    showStatus('已匯出 SVG，並在新分頁開啟預覽（如未自動下載，請在新分頁按 Ctrl+S 手動存檔）');
+
+    setTimeout(()=> URL.revokeObjectURL(url), 30000);
+  });
+
+  // ---- 匯出 PNG ----
+  document.getElementById('btnPNG').addEventListener('click', ()=>{
+    const clone = buildExportClone();
+    const serializer = new XMLSerializer();
+    let svgString = serializer.serializeToString(clone);
+
+    const svg64 = btoa(unescape(encodeURIComponent(svgString)));
+    const image64 = 'data:image/svg+xml;base64,' + svg64;
+
+    const img = new Image();
+    img.onload = function(){
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = 540 * scale;
+      canvas.height = 540 * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(function(blob){
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = getFileName() + '.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        // 備援：額外開一個新分頁顯示圖片，若下載被擋，可在新分頁右鍵「另存圖片為」
+        window.open(url, '_blank');
+        showStatus('已匯出 PNG，並在新分頁開啟預覽（如未自動下載，請在新分頁右鍵「另存圖片為」）');
+
+        setTimeout(()=> URL.revokeObjectURL(url), 30000);
+      });
+    };
+    img.onerror = function(err){
+      console.error('PNG 匯出失敗', err);
+      showStatus('PNG 匯出發生問題，請改用「另存為 SVG」。');
+    };
+    img.src = image64;
+  });
+</script>
+
+</body>
+</html>
